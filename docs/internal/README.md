@@ -5,14 +5,15 @@ This directory contains project-wide documentation, revision histories, and impr
 ## Directory Structure
 
 ```
-docs/
+docs/internal/
 ├── README.md (this file)
 ├── edge_candidate_agent_design.md
 ├── edge-institutionalization-process.md
 ├── kanchi-dividend-skills-runbook.md
 └── revisions/
     ├── bubble-detector-v2.0-revision.md
-    └── Breadth Chart Analyst Skill_IMPROVEMENTS_v2.0.md
+    ├── Breadth Chart Analyst Skill_IMPROVEMENTS_v2.0.md
+    └── edge_daily_idea_to_strategy_seed_agent_design_archive_2026-02-23.md
 ```
 
 ## `revisions/`
@@ -32,7 +33,7 @@ Contains detailed revision and improvement records for each skill.
 
 When making significant improvements to a skill:
 
-1. Document the revision in `docs/revisions/[skill-name]-[version]-revision.md`
+1. Document the revision in `revisions/[skill-name]-[version]-revision.md`
 2. Include:
    - Problems identified
    - Solutions implemented
