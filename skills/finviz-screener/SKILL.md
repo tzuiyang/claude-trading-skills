@@ -153,6 +153,124 @@ After opening the screener, report:
 
 ---
 
+## Usage Recipes
+
+Real-world screening patterns distilled from repeated use. Each recipe includes a starter filter set, recommended view, and tips for iterative refinement.
+
+### Recipe 1: High-Dividend Growth Stocks (Kanchi-Style)
+
+**Goal:** High yield + dividend growth + earnings growth, excluding yield traps.
+
+```
+--filters "fa_div_3to8,fa_sales5years_pos,fa_eps5years_pos,fa_divgrowth_5ypos,fa_payoutratio_u60,geo_usa"
+--view financial
+```
+
+| Filter Code | Purpose |
+|---|---|
+| `fa_div_3to8` | Yield 3-8% (caps high-yield traps) |
+| `fa_sales5years_pos` | Positive 5Y revenue growth |
+| `fa_eps5years_pos` | Positive 5Y EPS growth |
+| `fa_divgrowth_5ypos` | Positive 5Y dividend growth |
+| `fa_payoutratio_u60` | Payout ratio < 60% (sustainability) |
+| `geo_usa` | US-listed stocks |
+
+**Iterative refinement:** Start broad with `fa_div_o3` → review results → add `fa_div_3to8` to cap yield → add `fa_payoutratio_u60` to exclude traps → switch to `financial` view for payout and growth columns.
+
+### Recipe 2: Minervini Trend Template + VCP
+
+**Goal:** Stocks in a Stage 2 uptrend with volatility contraction (VCP setup).
+
+```
+--filters "ta_sma50_pa,ta_sma200_pa,ta_sma200_sb50,ta_highlow52w_0to25-bhx,ta_perf_26wup,sh_avgvol_o300,cap_midover"
+--view technical
+```
+
+| Filter Code | Purpose |
+|---|---|
+| `ta_sma50_pa` | Price above 50-day SMA |
+| `ta_sma200_pa` | Price above 200-day SMA |
+| `ta_sma200_sb50` | 200 SMA below 50 SMA (uptrend) |
+| `ta_highlow52w_0to25-bhx` | Within 25% of 52W high |
+| `ta_perf_26wup` | Positive 26-week performance |
+| `sh_avgvol_o300` | Avg volume > 300K |
+| `cap_midover` | Mid cap and above |
+
+**VCP tightening filters (add to narrow):** `ta_volatility_wo3,ta_highlow20d_b0to5h,sh_relvol_u1` — low weekly volatility, near 20-day high, below-average relative volume (contraction signal).
+
+### Recipe 3: Unfairly Sold-Off Growth Stocks
+
+**Goal:** Fundamentally strong companies with recent sharp declines — potential mean reversion candidates.
+
+```
+--filters "fa_sales5years_o5,fa_eps5years_o10,fa_roe_o15,fa_salesqoq_pos,fa_epsqoq_pos,ta_perf_13wdown,ta_highlow52w_10to30-bhx,cap_large,sh_avgvol_o200"
+--view overview
+```
+
+| Filter Code | Purpose |
+|---|---|
+| `fa_sales5years_o5` | 5Y sales growth > 5% |
+| `fa_eps5years_o10` | 5Y EPS growth > 10% |
+| `fa_roe_o15` | ROE > 15% |
+| `fa_salesqoq_pos` | Positive QoQ sales growth |
+| `fa_epsqoq_pos` | Positive QoQ EPS growth |
+| `ta_perf_13wdown` | Negative 13-week performance |
+| `ta_highlow52w_10to30-bhx` | 10-30% below 52W high |
+| `cap_large` | Large cap |
+| `sh_avgvol_o200` | Avg volume > 200K |
+
+**After review:** Switch to `valuation` view to check P/E and P/S for entry attractiveness.
+
+### Recipe 4: Turnaround Stocks
+
+**Goal:** Companies with previously declining earnings now showing recovery — bottom-fishing with fundamental confirmation.
+
+```
+--filters "fa_eps5years_neg,fa_epsqoq_pos,fa_salesqoq_pos,ta_highlow52w_b30h,ta_perf_13wup,cap_smallover,sh_avgvol_o200"
+--view performance
+```
+
+| Filter Code | Purpose |
+|---|---|
+| `fa_eps5years_neg` | Negative 5Y EPS growth (prior decline) |
+| `fa_epsqoq_pos` | Positive QoQ EPS growth (recovery) |
+| `fa_salesqoq_pos` | Positive QoQ sales growth (recovery) |
+| `ta_highlow52w_b30h` | Within 30% of 52W high (not at bottom) |
+| `ta_perf_13wup` | Positive 13-week performance |
+| `cap_smallover` | Small cap and above |
+| `sh_avgvol_o200` | Avg volume > 200K |
+
+### Recipe 5: Momentum Trade Candidates
+
+**Goal:** Short-term momentum leaders near 52W highs with increasing volume.
+
+```
+--filters "ta_sma50_pa,ta_sma200_pa,ta_highlow52w_b0to3h,ta_perf_4wup,sh_relvol_o1.5,sh_avgvol_o1000,cap_midover"
+--view technical
+```
+
+| Filter Code | Purpose |
+|---|---|
+| `ta_sma50_pa` | Price above 50-day SMA |
+| `ta_sma200_pa` | Price above 200-day SMA |
+| `ta_highlow52w_b0to3h` | Within 3% of 52W high |
+| `ta_perf_4wup` | Positive 4-week performance |
+| `sh_relvol_o1.5` | Relative volume > 1.5x |
+| `sh_avgvol_o1000` | Avg volume > 1M |
+| `cap_midover` | Mid cap and above |
+
+### Tips: Iterative Refinement Pattern
+
+Screening works best as a dialogue, not a one-shot query:
+
+1. **Start broad** — use 3-4 core filters to get an initial result set
+2. **Review count** — if too many results (>100), add tightening filters; if too few (<5), relax constraints
+3. **Switch views** — start with `overview` for a quick scan, then switch to `financial` or `valuation` for deeper inspection
+4. **Layer in technicals** — after confirming fundamental quality, add `ta_` filters to time entries
+5. **Save and iterate** — bookmark the URL, then adjust one filter at a time to understand its impact
+
+---
+
 ## Resources
 
 - `references/finviz_screener_filters.md` — Complete filter code reference with natural language keywords (includes industry code examples; full 142-code list is in the Industry Codes section)
