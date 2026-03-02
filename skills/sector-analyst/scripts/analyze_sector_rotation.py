@@ -104,6 +104,11 @@ class SectorData:
 # ---------------------------------------------------------------------------
 
 
+# Required columns for sector_summary.csv validation.
+REQUIRED_COLUMNS = {"Sector", "Ratio"}
+EXPECTED_COLUMNS = {"Sector", "Ratio", "10MA", "Trend", "Slope", "Status"}
+
+
 def fetch_csv(url: str, timeout: int = 30) -> list[dict]:
     """Fetch a CSV from *url* and return rows as list of dicts."""
     try:
@@ -116,6 +121,26 @@ def fetch_csv(url: str, timeout: int = 30) -> list[dict]:
 
     reader = csv.DictReader(io.StringIO(text))
     return list(reader)
+
+
+def validate_columns(raw_rows: list[dict]) -> None:
+    """Validate that required columns exist in CSV data.
+
+    Raises ValueError if required columns are missing.
+    Prints a warning if optional expected columns are missing.
+    """
+    if not raw_rows:
+        return
+    actual = set(raw_rows[0].keys())
+    missing_required = REQUIRED_COLUMNS - actual
+    if missing_required:
+        raise ValueError(f"Missing required columns: {sorted(missing_required)}")
+    missing_optional = EXPECTED_COLUMNS - REQUIRED_COLUMNS - actual
+    if missing_optional:
+        print(
+            f"WARNING: Missing optional columns: {sorted(missing_optional)}",
+            file=sys.stderr,
+        )
 
 
 def parse_sector_rows(raw_rows: list[dict]) -> list[SectorData]:
@@ -133,7 +158,7 @@ def parse_sector_rows(raw_rows: list[dict]) -> list[SectorData]:
         except ValueError:
             continue
 
-        ma_10 = _safe_float(row.get("MA_10", ""))
+        ma_10 = _safe_float(row.get("10MA", ""))
         slope = _safe_float(row.get("Slope", ""))
         trend = row.get("Trend", "").strip()
         status = row.get("Status", "").strip()
@@ -146,10 +171,15 @@ def check_freshness(uptrend_csv_url: str, timeout: int = 30) -> dict | None:
     """Check data freshness using max(date) from uptrend timeseries CSV.
 
     Returns dict with 'date', 'is_fresh', 'warning' or None on failure.
+    Fetch failures are treated as non-fatal (returns None with no ERROR log).
     """
     try:
-        rows = fetch_csv(uptrend_csv_url, timeout=timeout)
-    except SystemExit:
+        req = urllib.request.Request(uptrend_csv_url, headers={"User-Agent": "sector-analyst/1.0"})
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            text = resp.read().decode("utf-8")
+        reader = csv.DictReader(io.StringIO(text))
+        rows = list(reader)
+    except (urllib.error.URLError, OSError):
         return None
 
     if not rows:
@@ -669,6 +699,11 @@ def main() -> None:
     # 2. Fetch and parse sector data
     print("Fetching sector summary...", file=sys.stderr)
     raw_rows = fetch_csv(args.url, timeout=args.timeout)
+    try:
+        validate_columns(raw_rows)
+    except ValueError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        raise SystemExit(1) from exc
     sectors = parse_sector_rows(raw_rows)
 
     if not sectors:

@@ -19,6 +19,7 @@ from analyze_sector_rotation import (
     identify_overbought_oversold,
     parse_sector_rows,
     rank_sectors,
+    validate_columns,
 )
 from helpers import (
     ALL_SECTORS,
@@ -44,6 +45,19 @@ class TestParseSectorRows:
         assert result[0].ratio == pytest.approx(0.25)
         assert result[0].trend == "Up"
         assert result[0].slope == pytest.approx(0.008)
+
+    def test_ma_10_parsed_from_10MA_column(self):
+        """Verify that ma_10 is read from the '10MA' column (actual CSV name)."""
+        row = {
+            "Sector": "Technology",
+            "Ratio": "0.25",
+            "10MA": "0.23",
+            "Trend": "Up",
+            "Slope": "0.005",
+            "Status": "Normal",
+        }
+        result = parse_sector_rows([row])
+        assert result[0].ma_10 == pytest.approx(0.23)
 
     def test_full_set_parses_all_11(self):
         rows = make_full_sector_set()
@@ -78,6 +92,31 @@ class TestParseSectorRows:
 
     def test_empty_list_returns_empty(self):
         assert parse_sector_rows([]) == []
+
+
+# ---------------------------------------------------------------------------
+# TestValidateColumns
+# ---------------------------------------------------------------------------
+class TestValidateColumns:
+    """Tests for CSV column validation."""
+
+    def test_valid_columns_pass(self):
+        rows = make_full_sector_set()
+        validate_columns(rows)  # Should not raise
+
+    def test_missing_required_column_raises(self):
+        rows = [{"Ratio": "0.25", "10MA": "0.23"}]  # Missing "Sector"
+        with pytest.raises(ValueError, match="Sector"):
+            validate_columns(rows)
+
+    def test_missing_optional_column_warns(self, capsys):
+        rows = [{"Sector": "Technology", "Ratio": "0.25"}]  # Missing optional cols
+        validate_columns(rows)  # Should not raise
+        captured = capsys.readouterr()
+        assert "WARNING" in captured.err
+
+    def test_empty_rows_no_error(self):
+        validate_columns([])  # Should not raise
 
 
 # ---------------------------------------------------------------------------
@@ -381,53 +420,76 @@ class TestFetchCsv:
 # TestCheckFreshness
 # ---------------------------------------------------------------------------
 class TestCheckFreshness:
-    """Tests for data freshness checking."""
+    """Tests for data freshness checking via direct urllib (no fetch_csv)."""
 
-    @patch("analyze_sector_rotation.fetch_csv")
-    def test_fresh_data(self, mock_fetch):
+    @staticmethod
+    def _make_mock_response(csv_text: str) -> MagicMock:
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = csv_text.encode("utf-8")
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+        return mock_resp
+
+    @patch("analyze_sector_rotation.urllib.request.urlopen")
+    def test_fresh_data(self, mock_urlopen):
         today = date.today()
         yesterday = today - timedelta(days=1)
-        mock_fetch.return_value = [
-            {"date": str(today - timedelta(days=10))},
-            {"date": str(yesterday)},  # Latest
-            {"date": str(today - timedelta(days=5))},
-        ]
+        csv_text = (
+            "date,value\n"
+            f"{today - timedelta(days=10)},0.1\n"
+            f"{yesterday},0.2\n"
+            f"{today - timedelta(days=5)},0.15\n"
+        )
+        mock_urlopen.return_value = self._make_mock_response(csv_text)
         result = check_freshness("https://example.com/ts.csv")
         assert result["date"] == str(yesterday)
         assert result["is_fresh"] is True
         assert result["warning"] is None
 
-    @patch("analyze_sector_rotation.fetch_csv")
-    def test_stale_data(self, mock_fetch):
+    @patch("analyze_sector_rotation.urllib.request.urlopen")
+    def test_stale_data(self, mock_urlopen):
         old_date = date.today() - timedelta(days=10)
-        mock_fetch.return_value = [
-            {"date": str(old_date - timedelta(days=5))},
-            {"date": str(old_date)},
-        ]
+        csv_text = f"date,value\n{old_date - timedelta(days=5)},0.1\n{old_date},0.2\n"
+        mock_urlopen.return_value = self._make_mock_response(csv_text)
         result = check_freshness("https://example.com/ts.csv")
         assert result["is_fresh"] is False
         assert result["warning"] is not None
 
-    @patch("analyze_sector_rotation.fetch_csv")
-    def test_fetch_failure_returns_none(self, mock_fetch):
-        mock_fetch.side_effect = SystemExit(1)
+    @patch("analyze_sector_rotation.urllib.request.urlopen")
+    def test_fetch_failure_returns_none(self, mock_urlopen):
+        from urllib.error import URLError
+
+        mock_urlopen.side_effect = URLError("connection failed")
         result = check_freshness("https://example.com/ts.csv")
         assert result is None
 
-    @patch("analyze_sector_rotation.fetch_csv")
-    def test_order_independent(self, mock_fetch):
+    @patch("analyze_sector_rotation.urllib.request.urlopen")
+    def test_no_error_log_on_fetch_failure(self, mock_urlopen, capsys):
+        """Freshness fetch failure should not produce ERROR log."""
+        from urllib.error import URLError
+
+        mock_urlopen.side_effect = URLError("connection failed")
+        check_freshness("https://example.com/ts.csv")
+        captured = capsys.readouterr()
+        assert "ERROR" not in captured.err
+
+    @patch("analyze_sector_rotation.urllib.request.urlopen")
+    def test_order_independent(self, mock_urlopen):
         """Max date is found regardless of row order."""
         today = date.today()
-        mock_fetch.return_value = [
-            {"date": str(today - timedelta(days=3))},
-            {"date": str(today)},
-            {"date": str(today - timedelta(days=7))},
-        ]
+        csv_text = (
+            "date,value\n"
+            f"{today - timedelta(days=3)},0.1\n"
+            f"{today},0.2\n"
+            f"{today - timedelta(days=7)},0.15\n"
+        )
+        mock_urlopen.return_value = self._make_mock_response(csv_text)
         result = check_freshness("https://example.com/ts.csv")
         assert result["date"] == str(today)
 
-    @patch("analyze_sector_rotation.fetch_csv")
-    def test_empty_timeseries(self, mock_fetch):
-        mock_fetch.return_value = []
+    @patch("analyze_sector_rotation.urllib.request.urlopen")
+    def test_empty_timeseries(self, mock_urlopen):
+        csv_text = "date,value\n"
+        mock_urlopen.return_value = self._make_mock_response(csv_text)
         result = check_freshness("https://example.com/ts.csv")
         assert result is None

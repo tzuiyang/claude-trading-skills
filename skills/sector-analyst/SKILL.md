@@ -75,22 +75,6 @@ If chart images are provided, use them to supplement with industry-level detail:
 - Compare 1-week vs 1-month performance for trend consistency
 - Note specific industries showing strength or weakness within sectors
 
-### Step 2: Market Cycle Assessment
-
-Load the sector rotation knowledge base to inform analysis:
-- Read `references/sector_rotation.md` to access market cycle and sector rotation frameworks
-- Compare observed performance patterns against expected patterns for each cycle phase:
-  - Early Cycle Recovery
-  - Mid Cycle Expansion
-  - Late Cycle
-  - Recession
-
-Identify which cycle phase best matches current observations by:
-- Mapping outperforming sectors to typical cycle leaders
-- Mapping underperforming sectors to typical cycle laggards
-- Assessing consistency across multiple sectors
-- Evaluating alignment with defensive vs cyclical sector performance
-
 ### Step 3: Current Situation Analysis
 
 Synthesize observations into an objective assessment:

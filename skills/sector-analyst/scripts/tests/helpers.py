@@ -13,7 +13,7 @@ def make_sector_row(
     return {
         "Sector": sector,
         "Ratio": str(ratio),
-        "MA_10": str(ma_10),
+        "10MA": str(ma_10),
         "Trend": trend,
         "Slope": str(slope),
         "Status": status,
