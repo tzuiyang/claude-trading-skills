@@ -557,7 +557,8 @@ def idea_to_skill_name(idea: dict) -> str:
 def select_next_idea(backlog: dict, project_root: Path) -> dict | None:
     """Pick the highest composite-score idea that is eligible for processing.
 
-    Eligible = status is 'pending' OR (status in RETRYABLE and retry_count <= MAX_RETRIES).
+    Eligible = trading_value >= MIN_TRADING_VALUE AND
+    (status is 'pending' OR (status in RETRYABLE and retry_count <= MAX_RETRIES)).
     Additionally, skip ideas whose skill directory already exists (runtime dedup).
     """
     RETRYABLE = {"design_failed", "pr_failed"}

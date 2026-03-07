@@ -518,6 +518,17 @@ def test_select_next_idea_skips_retryable_low_trading_value(pipeline_module, tmp
     assert result["id"] == "pending_high"
 
 
+def test_select_next_idea_boundary_trading_value(pipeline_module, tmp_path):
+    """trading_value == MIN_TRADING_VALUE is eligible (boundary check)."""
+    backlog = {
+        "ideas": [
+            _make_idea(id_="boundary", composite=70, trading_value=15),
+        ]
+    }
+    result = pipeline_module.select_next_idea(backlog, tmp_path)
+    assert result["id"] == "boundary"
+
+
 # -- Daily flow: idea_to_skill_name tests --
 
 
