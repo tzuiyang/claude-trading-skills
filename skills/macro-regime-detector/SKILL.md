@@ -84,3 +84,9 @@ Options:
   --output-dir DIR    Output directory (default: current directory)
   --days N            Days of history to fetch (default: 600)
 ```
+
+## Resources
+
+- `references/regime_detection_methodology.md` — Detection methodology and signal interpretation
+- `references/indicator_interpretation_guide.md` — Guide for interpreting cross-asset ratios
+- `references/historical_regimes.md` — Historical regime examples for context
