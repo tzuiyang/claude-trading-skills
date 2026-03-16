@@ -409,10 +409,19 @@ def _build_contractions_from(
 
         # Skip contractions that are too short
         if duration < min_contraction_days:
-            # Try to find a later swing low instead
+            # Find the next swing high after current_high to bound the search
+            next_high_boundary = None
+            for idx, val in swing_highs:
+                if idx > current_high_idx:
+                    next_high_boundary = idx
+                    break
+
+            # Try to find a later swing low, but only before the next swing high
             found_valid = False
             for idx, val in swing_lows:
                 if idx > current_high_idx and (idx - current_high_idx) >= min_contraction_days:
+                    if next_high_boundary is not None and idx > next_high_boundary:
+                        break  # Don't jump past an intermediate swing high
                     next_low = (idx, val)
                     low_idx, low_val = next_low
                     duration = low_idx - current_high_idx

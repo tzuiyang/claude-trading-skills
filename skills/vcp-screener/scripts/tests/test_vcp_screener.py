@@ -263,6 +263,8 @@ class TestPivotProximity:
     def test_below_stop_level(self):
         result = calculate_pivot_proximity(90.0, 100.0, last_contraction_low=95.0)
         assert "BELOW STOP LEVEL" in result["trade_status"]
+        assert result["score"] == 0
+        assert result["risk_pct"] is None
 
     def test_extended_above_pivot_7pct(self):
         """7% above pivot (no volume) -> score=50, High chase risk."""
@@ -1999,7 +2001,7 @@ def test_entry_ready_below_stop_returns_false():
         "distance_from_pivot_pct": -5.5,  # within -8 to +3 window
         "volume_pattern": {"dry_up_ratio": 0.5},
         "pivot_proximity": {
-            "risk_pct": 0,  # 0 because price < stop
+            "risk_pct": None,  # None because price < stop (setup invalidated)
             "trade_status": "BELOW STOP LEVEL",
             "stop_loss_price": 95.04,
         },
@@ -2079,3 +2081,88 @@ def test_prefilter_score_capped_at_100():
     assert passed is True
     # pct_above_low = 2.0, capped at 1.0 → 50 + (1 - 0.032) * 50 ≈ 98.4
     assert score <= 100
+
+
+def test_below_stop_report_shows_stop_violated():
+    """BELOW STOP LEVEL should show 'STOP VIOLATED' in report, not buy guidance."""
+    stock = {
+        "symbol": "TEST",
+        "company_name": "Test Corp",
+        "sector": "Technology",
+        "price": 94.0,
+        "market_cap": 10e9,
+        "composite_score": 45.0,
+        "rating": "Weak VCP",
+        "rating_description": "Weak",
+        "guidance": "Buy at pivot, standard position sizing",
+        "valid_vcp": True,
+        "distance_from_pivot_pct": -6.0,
+        "weakest_component": "pivot",
+        "weakest_score": 0,
+        "strongest_component": "trend",
+        "strongest_score": 95,
+        "entry_ready": False,
+        "trend_template": {"score": 95, "criteria_passed": 7},
+        "vcp_pattern": {
+            "score": 70,
+            "num_contractions": 2,
+            "contractions": [],
+            "pivot_price": 100.0,
+        },
+        "volume_pattern": {"score": 60, "dry_up_ratio": 0.5},
+        "pivot_proximity": {
+            "score": 0,
+            "distance_from_pivot_pct": -6.0,
+            "stop_loss_price": 95.04,
+            "risk_pct": None,
+            "trade_status": "BELOW STOP LEVEL",
+        },
+        "relative_strength": {"score": 80, "rs_rank_estimate": 80, "weighted_rs": 10.0},
+    }
+    metadata = {"generated_at": "2025-01-01", "funnel": {}}
+    with tempfile.TemporaryDirectory() as tmpdir:
+        md_file = os.path.join(tmpdir, "test.md")
+        generate_markdown_report([stock], metadata, md_file)
+        with open(md_file) as f:
+            content = f.read()
+        assert "STOP VIOLATED" in content
+        assert "setup invalidated" in content.lower()
+        # Should NOT contain normal buy guidance
+        assert "Buy at pivot, standard position sizing" not in content
+
+
+def test_build_contractions_does_not_skip_intermediate_high():
+    """Contraction builder must not jump past intermediate swing highs."""
+    from calculators.vcp_pattern_calculator import _build_contractions_from
+
+    # swing_highs: H0=100@idx0, H1=98@idx4, H2=97@idx10
+    # swing_lows:  L0=90@idx2, L1=92@idx7, L2=93@idx12
+    # With min_contraction_days=5:
+    #   From H0(idx=0), first low is L0(idx=2) -> duration=2 < 5, too short.
+    #   Next candidate low is L1(idx=7) -> duration=7 >= 5.
+    #   But H1(idx=4) is between H0 and L1, so we must NOT create a H0->L1 contraction.
+    swing_highs = [(0, 100.0), (4, 98.0), (10, 97.0)]
+    swing_lows = [(2, 90.0), (7, 92.0), (12, 93.0)]
+    highs = [100.0] * 15
+    lows = [90.0] * 15
+    dates = [f"day-{i}" for i in range(15)]
+
+    contractions = _build_contractions_from(
+        start_high=(0, 100.0),
+        swing_highs=swing_highs,
+        swing_lows=swing_lows,
+        highs=highs,
+        lows=lows,
+        dates=dates,
+        min_contraction_days=5,
+    )
+
+    # The builder should NOT produce a contraction from idx=0 to idx=7
+    # because idx=4 has an intermediate swing high
+    for c in contractions:
+        if c["high_idx"] == 0:
+            # If a contraction starts at idx 0, its low must not be past idx 4
+            assert c["low_idx"] <= 4, (
+                f"Contraction from idx=0 jumped to low_idx={c['low_idx']}, "
+                f"skipping intermediate swing high at idx=4"
+            )
