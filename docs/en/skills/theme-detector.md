@@ -73,7 +73,7 @@ pip install requests beautifulsoup4 lxml pandas numpy yfinance
 
 | API | Benefit | Cost |
 |-----|---------|------|
-| FINVIZ Elite | Full stock universe per industry, faster execution (~2-3 min vs 5-8 min), real-time data | $39.99/mo |
+| FINVIZ Elite | Full stock universe per industry, faster execution (~2-3 min vs 5-8 min), real-time data | $39.50/mo |
 | FMP API | P/E ratio valuation data for lifecycle assessment, ETF holdings for theme confirmation | Free tier: 250/day |
 
 > The skill works fully without any API keys. FINVIZ Elite and FMP enhance coverage and speed but are not required.
@@ -287,7 +287,7 @@ Direction is determined by majority vote of constituent industries' relative ran
 
 **Expected behavior:** Public FINVIZ mode takes 5-8 minutes due to rate limiting (2.0 seconds between requests for ~145 industries).
 
-**Fix:** If speed is critical, set up FINVIZ Elite ($39.99/mo) for 2-3 minute execution with `--finviz-api-key`.
+**Fix:** If speed is critical, set up FINVIZ Elite ($39.50/mo) for 2-3 minute execution with `--finviz-api-key`.
 
 ### Missing Python dependencies
 
@@ -347,7 +347,7 @@ WebSearch-based narrative confirmation depends on internet connectivity and sear
 | Stocks per industry | Full universe | ~20 stocks (page 1) |
 | Rate limiting | 0.5s between requests | 2.0s between requests |
 | Data freshness | Real-time | 15-minute delayed |
-| API key required | Yes ($39.99/mo) | No |
+| API key required | Yes ($39.50/mo) | No |
 | Execution time | ~2-3 minutes | ~5-8 minutes |
 
 ### Theme Heat Sub-Components

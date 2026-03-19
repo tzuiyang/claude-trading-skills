@@ -580,7 +580,7 @@ Several skills require API keys for data access:
 - Or provide key via command-line argument when prompted
 
 **FINVIZ Elite API:**
-- Subscription: $39.99/month or $329.99/year
+- Subscription: $39.50/month or $299.50/year
 - Sign up: https://elite.finviz.com/
 - Set environment variable: `export FINVIZ_API_KEY=your_key_here`
 - Provides fast pre-screening for dividend screeners

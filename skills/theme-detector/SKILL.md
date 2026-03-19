@@ -283,7 +283,7 @@ Save the report to `reports/` directory.
 | Stocks per industry | Full universe | ~20 stocks (page 1) |
 | Rate limiting | 0.5s between requests | 2.0s between requests |
 | Data freshness | Real-time | 15-min delayed |
-| API key required | Yes ($39.99/mo) | No |
+| API key required | Yes ($39.50/mo) | No |
 | Execution time | ~2-3 minutes | ~5-8 minutes |
 
 ### Direction Detection Logic
