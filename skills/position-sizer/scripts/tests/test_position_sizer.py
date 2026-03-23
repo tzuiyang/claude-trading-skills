@@ -102,7 +102,7 @@ class TestATRBased:
 
 class TestKelly:
     def test_kelly_criterion(self):
-        """win_rate=0.55, avg_win=2.5, avg_loss=1.0 -> ~10% kelly."""
+        """win_rate=0.55, avg_win=2.5, avg_loss=1.0 -> 37% kelly, 18.5% half-kelly."""
         params = SizingParameters(
             account_size=100_000,
             win_rate=0.55,
@@ -110,15 +110,7 @@ class TestKelly:
             avg_loss=1.0,
         )
         result = calculate_kelly(params)
-        # K = 0.55 - (0.45 / 2.5) = 0.55 - 0.18 = 0.37 -> 37%?
-        # Actually: K = W - (1-W)/R = 0.55 - 0.45/2.5 = 0.55 - 0.18 = 0.37
-        # Wait, the spec says ~10%. Let me re-check the formula.
-        # The spec says: win_rate=0.55, avg_win=2.5, avg_loss=1.0 -> kelly_pct ~ 10%
-        # Maybe R = avg_win / avg_loss = 2.5 / 1.0 = 2.5
         # K = W - (1-W)/R = 0.55 - 0.45/2.5 = 0.55 - 0.18 = 0.37 = 37%
-        # But spec says ~10%. Let me check if they mean something different.
-        # Actually with the given formula the result is 37%. The spec approximation
-        # may be off. Let's test the actual math: 0.55 - 0.45/2.5 = 0.37 = 37%
         assert result["kelly_pct"] == 37.0
         assert result["half_kelly_pct"] == 18.5
 
