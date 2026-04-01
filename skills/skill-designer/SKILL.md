@@ -23,7 +23,7 @@ documents, helper scripts, and test scaffolding.
 
 - Python 3.9+
 - No external API keys required
-- Reference files must exist under `skills/skill-designer/references/`
+- Reference files must exist under `references/`
 
 ## Workflow
 
